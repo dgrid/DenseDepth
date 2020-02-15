@@ -2,13 +2,14 @@ import os
 import glob
 import argparse
 import matplotlib
+from matplotlib import pyplot as plt
 
 # Keras / TensorFlow
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '5'
 from keras.models import load_model
 from layers import BilinearUpSampling2D
 from utils import predict, load_images, display_images
-from matplotlib import pyplot as plt
+from loss import depth_loss_function
 
 # Argument Parser
 parser = argparse.ArgumentParser(description='High Quality Monocular Depth Estimation via Transfer Learning')
@@ -40,7 +41,7 @@ print('\nLoaded ({0}) images of size {1}.'.format(inputs.shape[0], inputs.shape[
 outputs = predict(model, inputs)
 
 #matplotlib problem on ubuntu terminal fix
-#matplotlib.use('TkAgg')   
+#matplotlib.use('TkAgg')
 
 # Display results
 viz = display_images(outputs.copy(), inputs.copy())

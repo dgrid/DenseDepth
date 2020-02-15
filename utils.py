@@ -5,9 +5,11 @@ def DepthNorm(x, maxDepth):
     return maxDepth / x
 
 def predict(model, images, minDepth=10, maxDepth=1000, batch_size=2):
-    # Support multiple RGBs, one RGB image, even grayscale 
-    if len(images.shape) < 3: images = np.stack((images,images,images), axis=2)
-    if len(images.shape) < 4: images = images.reshape((1, images.shape[0], images.shape[1], images.shape[2]))
+    # Support multiple RGBs, one RGB image, even grayscale
+    if len(images.shape) < 3:
+        images = np.stack((images,images,images), axis=2)
+    if len(images.shape) < 4:
+        images = images.reshape((1, images.shape[0], images.shape[1], images.shape[2]))
     # Compute predictions
     predictions = model.predict(images, batch_size=batch_size)
     # Put in expected range
@@ -16,7 +18,7 @@ def predict(model, images, minDepth=10, maxDepth=1000, batch_size=2):
 def scale_up(scale, images):
     from skimage.transform import resize
     scaled = []
-    
+
     for i in range(len(images)):
         img = images[i]
         output_shape = (scale * img.shape[0], scale * img.shape[1])
@@ -35,7 +37,7 @@ def to_multichannel(i):
     if i.shape[2] == 3: return i
     i = i[:,:,0]
     return np.stack((i,i,i), axis=2)
-        
+
 def display_images(outputs, inputs=None, gt=None, is_colormap=True, is_rescale=True):
     import matplotlib.pyplot as plt
     import skimage
@@ -44,12 +46,12 @@ def display_images(outputs, inputs=None, gt=None, is_colormap=True, is_rescale=T
     plasma = plt.get_cmap('plasma')
 
     shape = (outputs[0].shape[0], outputs[0].shape[1], 3)
-    
+
     all_images = []
 
     for i in range(outputs.shape[0]):
         imgs = []
-        
+
         if isinstance(inputs, (list, tuple, np.ndarray)):
             x = to_multichannel(inputs[i])
             x = resize(x, shape, preserve_range=True, mode='reflect', anti_aliasing=True )
@@ -73,7 +75,7 @@ def display_images(outputs, inputs=None, gt=None, is_colormap=True, is_rescale=T
         all_images.append(img_set)
 
     all_images = np.stack(all_images)
-    
+
     return skimage.util.montage(all_images, multichannel=True, fill=(0,0,0))
 
 def save_images(filename, outputs, inputs=None, gt=None, is_colormap=True, is_rescale=False):
@@ -111,14 +113,14 @@ def evaluate(model, rgb, depth, crop, batch_size=6, verbose=False):
 
     predictions = []
     testSetDepths = []
-    
-    for i in range(N//bs):    
+
+    for i in range(N//bs):
         x = rgb[(i)*bs:(i+1)*bs,:,:,:]
-        
+
         # Compute results
         true_y = depth[(i)*bs:(i+1)*bs,:,:]
         pred_y = scale_up(2, predict(model, x/255, minDepth=10, maxDepth=1000, batch_size=bs)[:,:,:,0]) * 10.0
-        
+
         # Test time augmentation: mirror image estimate
         pred_y_flip = scale_up(2, predict(model, x[...,::-1,:]/255, minDepth=10, maxDepth=1000, batch_size=bs)[:,:,:,0]) * 10.0
 
@@ -126,7 +128,7 @@ def evaluate(model, rgb, depth, crop, batch_size=6, verbose=False):
         true_y = true_y[:,crop[0]:crop[1]+1, crop[2]:crop[3]+1]
         pred_y = pred_y[:,crop[0]:crop[1]+1, crop[2]:crop[3]+1]
         pred_y_flip = pred_y_flip[:,crop[0]:crop[1]+1, crop[2]:crop[3]+1]
-        
+
         # Compute errors per image in batch
         for j in range(len(true_y)):
             predictions.append(   (0.5 * pred_y[j]) + (0.5 * np.fliplr(pred_y_flip[j]))   )

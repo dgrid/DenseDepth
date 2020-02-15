@@ -30,6 +30,7 @@ parser.add_argument('--maxdepth', type=float, default=1000.0, help='Maximum of i
 parser.add_argument('--name', type=str, default='densedepth_nyu', help='A name to attach to the training session')
 parser.add_argument('--checkpoint', type=str, default='', help='Start training from an existing model.')
 parser.add_argument('--full', dest='full', action='store_true', help='Full training with metrics, checkpoints, and image samples.')
+parser.add_argument('--save_period', type=int, default=5)
 parser.add_argument('--debug', action='store_true')
 
 args = parser.parse_args()
@@ -96,12 +97,13 @@ print('Ready for training!\n')
 # Callbacks
 callbacks = []
 if args.data == 'nyu':
-    callbacks = get_nyu_callbacks(model, basemodel, train_generator, test_generator, load_test_data() if args.full else None , runPath, save_checkpoint_period=5)
+    callbacks = get_nyu_callbacks(model, basemodel, train_generator, test_generator, load_test_data() if args.full else None , runPath, save_checkpoint_period=args.save_period)
 if args.data == 'unreal':
     callbacks = get_nyu_callbacks(model, basemodel, train_generator, test_generator, load_test_data() if args.full else None , runPath)
 if args.data == 'own':
-    callbacks = get_nyu_callbacks(model, basemodel, train_generator, test_generator, load_test_data() if args.full else None , runPath, save_checkpoint_period=1)
+    callbacks = get_nyu_callbacks(model, basemodel, train_generator, test_generator, load_test_data() if args.full else None , runPath, save_checkpoint_period=args.save_period)
 
+import pdb; pdb.set_trace()
 # Start training
 model.fit_generator(train_generator, callbacks=callbacks, validation_data=test_generator, epochs=args.epochs, shuffle=True)
 
