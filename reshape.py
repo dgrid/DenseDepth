@@ -27,7 +27,7 @@ if __name__ == '__main__':
                 # img = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
                 img = Image.open(file).convert('LA')
             height, width = img.size[:2]
-            size = (int(width/2), int(height/2))
+            size = (height // 2, width // 2)
 
             resized = img.resize(size)
             output_name = os.path.join(args.output_dir, os.path.relpath(file, start=args.input_dir))
