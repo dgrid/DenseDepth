@@ -5,11 +5,132 @@ from PIL import Image
 from zipfile import ZipFile
 from keras.utils import Sequence
 from augment import BasicPolicy
+from pathlib import Path
+import csv
 
 def extract_zip(input_zip):
     input_zip=ZipFile(input_zip)
-    return {name: input_zip.read(name) for name in input_zip.namelist()}
+    name = {name: input_zip.read(name) for name in input_zip.namelist()}
+    return name
 
+##########################
+# own dataset
+##########################
+
+def own_resize(img, resolution=480, padding=6):
+    from skimage.transform import resize
+    return resize(img, (resolution, int(resolution*4/3)), preserve_range=True, mode='reflect', anti_aliasing=True )
+
+def get_own_data(batch_size, data_dir, shape_rgb_2d, shape_depth_2d):
+    data_dir = Path(data_dir)
+    with open(str(data_dir/"train.csv"), 'r') as train_f:
+        reader = csv.reader(train_f, delimiter=',')
+        own2_train = [row for row in reader]
+    with open(str(data_dir/"test.csv"), 'r') as test_f:
+        reader = csv.reader(test_f, delimiter=',')
+        own2_test = [row for row in reader]
+
+    data = list(map(str, data_dir.glob("**/*")))
+    data = {str(f): f.read_bytes() for f in data_dir.glob("**/*") if f.is_file()}
+
+    shape_rgb = (batch_size, ) + shape_rgb_2d + (3, )
+    shape_depth_reduced = (batch_size, ) + tuple([int(s / 2) for s in shape_depth_2d]) + (1, )
+
+    # Helpful for testing...
+    if False:
+        own2_train = own2_train[:10]
+        own2_test = own2_test[:10]
+
+    return data, own2_train, own2_test, shape_rgb, shape_depth_reduced
+
+def get_own_train_test_data(batch_size, data_dir, shape_rgb_2d, shape_depth_2d):
+    data, own2_train, own2_test, shape_rgb, shape_depth_reduced = get_own_data(batch_size, data_dir, shape_rgb_2d, shape_depth_2d)
+
+    train_generator = own_BasicAugmentRGBSequence(data, own2_train, batch_size=batch_size, shape_rgb=shape_rgb, shape_depth_reduced=shape_depth_reduced)
+    test_generator = own_BasicRGBSequence(data, own2_test, batch_size=batch_size, shape_rgb=shape_rgb, shape_depth_reduced=shape_depth_reduced)
+
+    return train_generator, test_generator
+
+class own_BasicAugmentRGBSequence(Sequence):
+    def __init__(self, data, dataset, batch_size, shape_rgb, shape_depth_reduced, is_flip=False, is_addnoise=False, is_erase=False):
+        self.data = data
+        self.dataset = dataset
+        self.policy = BasicPolicy( color_change_ratio=0.50, mirror_ratio=0.50, flip_ratio=0.0 if not is_flip else 0.2, 
+                                    add_noise_peak=0 if not is_addnoise else 20, erase_ratio=-1.0 if not is_erase else 0.5)
+        self.batch_size = batch_size
+        self.shape_rgb = shape_rgb
+        self.shape_depth_reduced = shape_depth_reduced
+        self.orig_shape_depth = (batch_size, ) + tuple([int(s * 2) for s in shape_depth_reduced[1:3]]) + (1, )
+        self.maxDepth = 1000.0
+
+        from sklearn.utils import shuffle
+        self.dataset = shuffle(self.dataset, random_state=0)
+
+        self.N = len(self.dataset)
+
+    def __len__(self):
+        return int(np.ceil(self.N / float(self.batch_size)))
+
+    def __getitem__(self, idx, is_apply_policy=True):
+        batch_x, batch_y = np.zeros( self.shape_rgb ), np.zeros( self.shape_depth_reduced )
+
+        # Augmentation of RGB images
+        for i in range(batch_x.shape[0]):
+            index = min((idx * self.batch_size) + i, self.N-1)
+            
+            sample = self.dataset[index]
+            x = np.clip(np.asarray(Image.open( BytesIO(self.data[sample[0]]) )).reshape(self.shape_rgb[1:])/255,0,1)
+            y = np.clip(np.asarray(Image.open( BytesIO(self.data[sample[1]]) )).reshape(self.orig_shape_depth[1:])/255*self.maxDepth,0,self.maxDepth)
+            y = DepthNorm(y, maxDepth=self.maxDepth)
+
+            batch_x[i] = own_resize(x, self.shape_rgb[1])
+            batch_y[i] = own_resize(y, self.shape_depth_reduced[1])
+
+            if is_apply_policy: batch_x[i], batch_y[i] = self.policy(batch_x[i], batch_y[i])
+
+            # DEBUG:
+            #self.policy.debug_img(batch_x[i], np.clip(DepthNorm(batch_y[i])/maxDepth,0,1), idx, i)
+        #exit()
+
+        return batch_x, batch_y
+
+class own_BasicRGBSequence(Sequence):
+    def __init__(self, data, dataset, batch_size,shape_rgb, shape_depth_reduced):
+        self.data = data
+        self.dataset = dataset
+        self.batch_size = batch_size
+        self.N = len(self.dataset)
+        self.shape_rgb = shape_rgb
+        self.shape_depth_reduced = shape_depth_reduced
+        self.orig_shape_depth = (batch_size, ) + tuple([int(s * 2) for s in shape_depth_reduced[1:3]]) + (1, )
+        self.maxDepth = 1000.0
+
+    def __len__(self):
+        return int(np.ceil(self.N / float(self.batch_size)))
+
+    def __getitem__(self, idx):
+        batch_x, batch_y = np.zeros( self.shape_rgb ), np.zeros( self.shape_depth_reduced )
+        for i in range(self.batch_size):            
+            index = min((idx * self.batch_size) + i, self.N-1)
+
+            sample = self.dataset[index]
+
+            x = np.clip(np.asarray(Image.open( BytesIO(self.data[sample[0]]))).reshape(self.shape_rgb[1:])/255,0,1)
+            y = np.asarray(Image.open(BytesIO(self.data[sample[1]])), dtype=np.float32).reshape(self.orig_shape_depth[1:]).copy().astype(float) / 10.0
+            y = DepthNorm(y, maxDepth=self.maxDepth)
+
+            batch_x[i] = own_resize(x, self.shape_rgb[1])
+            batch_y[i] = own_resize(y, self.shape_depth_reduced[1])
+
+            # DEBUG:
+            #self.policy.debug_img(batch_x[i], np.clip(DepthNorm(batch_y[i])/maxDepth,0,1), idx, i)
+        #exit()
+
+        return batch_x, batch_y
+
+##########################
+# NYU dataset
+##########################
 def nyu_resize(img, resolution=480, padding=6):
     from skimage.transform import resize
     return resize(img, (resolution, int(resolution*4/3)), preserve_range=True, mode='reflect', anti_aliasing=True )

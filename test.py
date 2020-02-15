@@ -14,6 +14,7 @@ from matplotlib import pyplot as plt
 parser = argparse.ArgumentParser(description='High Quality Monocular Depth Estimation via Transfer Learning')
 parser.add_argument('--model', default='nyu.h5', type=str, help='Trained Keras model file.')
 parser.add_argument('--input', default='examples/*.png', type=str, help='Input filename or folder.')
+parser.add_argument('--weight', type=str, help='weight file[.hdf5]')
 args = parser.parse_args()
 
 # Custom object needed for inference and training
@@ -25,6 +26,11 @@ print('Loading model...')
 model = load_model(args.model, custom_objects=custom_objects, compile=False)
 
 print('\nModel loaded ({0}).'.format(args.model))
+
+# set weight 2020/02/12
+if args.weight != None:
+    print("get weights from %s" % args.weight)
+    model.load_weights(args.weight, by_name=False)
 
 # Input images
 inputs = load_images( glob.glob(args.input) )
@@ -41,4 +47,4 @@ viz = display_images(outputs.copy(), inputs.copy())
 plt.figure(figsize=(10,5))
 plt.imshow(viz)
 plt.savefig('test.png')
-plt.show()
+#plt.show()
