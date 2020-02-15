@@ -5,3 +5,6 @@
 /.vscode
 *.jpg
 *.obj
+
+data/
+data_backup/
