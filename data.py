@@ -22,7 +22,7 @@ def own_resize(img, resolution=480, padding=6):
     from skimage.transform import resize
     return resize(img, (resolution, int(resolution*4/3)), preserve_range=True, mode='reflect', anti_aliasing=True )
 
-def get_own_data(batch_size, data_dir, shape_rgb_2d, shape_depth_2d, train_csv_path, test_csv_path):
+def get_own_data(batch_size, data_dir, shape_rgb_2d, shape_depth_2d, train_csv_path, test_csv_path, debug=False):
     data_dir = Path(data_dir)
     with open(os.path.join(data_dir, train_csv_path), 'r') as train_f:
         reader = csv.reader(train_f, delimiter=',')
@@ -38,14 +38,14 @@ def get_own_data(batch_size, data_dir, shape_rgb_2d, shape_depth_2d, train_csv_p
     shape_depth_reduced = (batch_size, ) + tuple([int(s / 2) for s in shape_depth_2d]) + (1, )
 
     # Helpful for testing...
-    if False:
+    if debug:
         own2_train = own2_train[:10]
         own2_test = own2_test[:10]
 
     return data, own2_train, own2_test, shape_rgb, shape_depth_reduced
 
-def get_own_train_test_data(batch_size, data_dir, shape_rgb_2d, shape_depth_2d, train_csv_path, test_csv_path):
-    data, own2_train, own2_test, shape_rgb, shape_depth_reduced = get_own_data(batch_size, data_dir, shape_rgb_2d, shape_depth_2d, train_csv_path, test_csv_path)
+def get_own_train_test_data(batch_size, data_dir, shape_rgb_2d, shape_depth_2d, train_csv_path, test_csv_path, debug=False):
+    data, own2_train, own2_test, shape_rgb, shape_depth_reduced = get_own_data(batch_size, data_dir, shape_rgb_2d, shape_depth_2d, train_csv_path, test_csv_path, debug)
 
     train_generator = own_BasicAugmentRGBSequence(data, own2_train, batch_size=batch_size, shape_rgb=shape_rgb, shape_depth_reduced=shape_depth_reduced)
     test_generator = own_BasicRGBSequence(data, own2_test, batch_size=batch_size, shape_rgb=shape_rgb, shape_depth_reduced=shape_depth_reduced)

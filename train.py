@@ -55,7 +55,7 @@ if args.data == 'nyu':
 if args.data == 'unreal':
     train_generator, test_generator = get_unreal_train_test_data( args.bs )
 if args.data == 'own':
-    train_generator, test_generator = get_own_train_test_data( args.bs, args.data_dir, shape_rgb_2d, shape_depth_2d, args.train_csv, args.test_csv)
+    train_generator, test_generator = get_own_train_test_data( args.bs, args.data_dir, shape_rgb_2d, shape_depth_2d, args.train_csv, args.test_csv, args.debug)
 
 # Training session details
 runID = str(int(time.time())) + '-n' + str(len(train_generator)) + '-e' + str(args.epochs) + '-bs' + str(args.bs) + '-lr' + str(args.lr) + '-' + args.name

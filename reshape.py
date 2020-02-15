@@ -25,7 +25,7 @@ if __name__ == '__main__':
             # trainのpng(depth画像)とtestのdepth画像はグレースケールで読み込む
             if (".png" in file and "train" in file) or ("depth" in file and "test" in file):
                 # img = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
-                img = Image.open(file).convert('LA')
+                img = Image.open(file).convert('L')
             height, width = img.size[:2]
             size = (height // 2, width // 2)
 
