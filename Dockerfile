@@ -34,6 +34,10 @@ RUN echo 'Defaults visiblepw' >> /etc/sudoers
 RUN echo 'USER ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 USER ${USER}
 
+# fix keras to save models
+# https://github.com/keras-team/keras/issues/9342
+COPY saving.py /usr/local/lib/python3.6/dist-packages/keras/engine/saving.py
+
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["bash"]
