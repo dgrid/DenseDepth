@@ -16,8 +16,8 @@ from keras.utils.vis_utils import plot_model
 parser = argparse.ArgumentParser(description='High Quality Monocular Depth Estimation via Transfer Learning')
 parser.add_argument('--data', default='nyu', type=str, help='Training dataset.')
 parser.add_argument('--data_dir', default='data', type=str)
-# parser.add_argument('--train_csv', type=str)
-# parser.add_argument('--test_csv', type=str)
+parser.add_argument('--train_csv', default='train.csv', type=str)
+parser.add_argument('--test_csv', default='test.csv', type=str)
 parser.add_argument('--shape_rgb_2d', default="480,640", type=str)
 parser.add_argument('--shape_depth_2d', default=None, type=str)
 parser.add_argument('--lr', type=float, default=0.0001, help='Learning rate')
@@ -44,12 +44,18 @@ else:
 # Create the model
 model = create_model( existing=args.checkpoint )
 shape_rgb_2d = tuple(map(int, args.shape_rgb_2d.split(",")))
-shape_depth_2d = shape_rgb_2d if args.shape_depth_2d is None else tuple(map(int, args.shape_depth_2d.split(",")))
+if args.shape_depth_2d is None:
+    shape_depth_2d = shape_rgb_2d
+else:
+    shape_depth_2d = tuple(map(int, args.shape_depth_2d.split(",")))
 
 # Data loaders
-if args.data == 'nyu': train_generator, test_generator = get_nyu_train_test_data( args.bs, args.debug )
-if args.data == 'unreal': train_generator, test_generator = get_unreal_train_test_data( args.bs )
-if args.data == 'own': train_generator, test_generator = get_own_train_test_data( args.bs, args.data_dir, shape_rgb_2d, shape_depth_2d)
+if args.data == 'nyu':
+    train_generator, test_generator = get_nyu_train_test_data( args.bs, args.debug )
+if args.data == 'unreal':
+    train_generator, test_generator = get_unreal_train_test_data( args.bs )
+if args.data == 'own':
+    train_generator, test_generator = get_own_train_test_data( args.bs, args.data_dir, shape_rgb_2d, shape_depth_2d, args.train_csv, args.test_csv)
 
 # Training session details
 runID = str(int(time.time())) + '-n' + str(len(train_generator)) + '-e' + str(args.epochs) + '-bs' + str(args.bs) + '-lr' + str(args.lr) + '-' + args.name

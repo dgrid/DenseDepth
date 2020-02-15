@@ -7,6 +7,7 @@ from keras.utils import Sequence
 from augment import BasicPolicy
 from pathlib import Path
 import csv
+import os
 
 def extract_zip(input_zip):
     input_zip=ZipFile(input_zip)
@@ -21,12 +22,12 @@ def own_resize(img, resolution=480, padding=6):
     from skimage.transform import resize
     return resize(img, (resolution, int(resolution*4/3)), preserve_range=True, mode='reflect', anti_aliasing=True )
 
-def get_own_data(batch_size, data_dir, shape_rgb_2d, shape_depth_2d):
+def get_own_data(batch_size, data_dir, shape_rgb_2d, shape_depth_2d, train_csv_path, test_csv_path):
     data_dir = Path(data_dir)
-    with open(str(data_dir/"train.csv"), 'r') as train_f:
+    with open(os.path.join(data_dir, train_csv_path), 'r') as train_f:
         reader = csv.reader(train_f, delimiter=',')
         own2_train = [row for row in reader]
-    with open(str(data_dir/"test.csv"), 'r') as test_f:
+    with open(os.path.join(data_dir, test_csv_path), 'r') as test_f:
         reader = csv.reader(test_f, delimiter=',')
         own2_test = [row for row in reader]
 
@@ -43,8 +44,8 @@ def get_own_data(batch_size, data_dir, shape_rgb_2d, shape_depth_2d):
 
     return data, own2_train, own2_test, shape_rgb, shape_depth_reduced
 
-def get_own_train_test_data(batch_size, data_dir, shape_rgb_2d, shape_depth_2d):
-    data, own2_train, own2_test, shape_rgb, shape_depth_reduced = get_own_data(batch_size, data_dir, shape_rgb_2d, shape_depth_2d)
+def get_own_train_test_data(batch_size, data_dir, shape_rgb_2d, shape_depth_2d, train_csv_path, test_csv_path):
+    data, own2_train, own2_test, shape_rgb, shape_depth_reduced = get_own_data(batch_size, data_dir, shape_rgb_2d, shape_depth_2d, train_csv_path, test_csv_path)
 
     train_generator = own_BasicAugmentRGBSequence(data, own2_train, batch_size=batch_size, shape_rgb=shape_rgb, shape_depth_reduced=shape_depth_reduced)
     test_generator = own_BasicRGBSequence(data, own2_test, batch_size=batch_size, shape_rgb=shape_rgb, shape_depth_reduced=shape_depth_reduced)
