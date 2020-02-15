@@ -11,11 +11,14 @@ def create_model(existing='', is_twohundred=False, is_halffeatures=True):
     if len(existing) == 0:
         print('Loading base model (DenseNet)..')
 
+        height = None
+        width = None
+
         # Encoder Layers
         if is_twohundred:
-            base_model = applications.DenseNet201(input_shape=(None, None, 3), include_top=False)
+            base_model = applications.DenseNet201(input_shape=(height, width, 3), include_top=False)
         else:
-            base_model = applications.DenseNet169(input_shape=(None, None, 3), include_top=False)
+            base_model = applications.DenseNet169(input_shape=(height, width, 3), include_top=False)
 
         print('Base model loaded.')
 
@@ -23,11 +26,12 @@ def create_model(existing='', is_twohundred=False, is_halffeatures=True):
         base_model_output_shape = base_model.layers[-1].output.shape
 
         # Layer freezing?
-        for layer in base_model.layers: layer.trainable = True
+        for layer in base_model.layers:
+            layer.trainable = True
 
         # Starting number of decoder filters
         if is_halffeatures:
-            decode_filters = int(int(base_model_output_shape[-1])/2)
+            decode_filters = int(base_model_output_shape[-1]) // 2
         else:
             decode_filters = int(base_model_output_shape[-1])
 
@@ -48,11 +52,11 @@ def create_model(existing='', is_twohundred=False, is_halffeatures=True):
         decoder = upproject(decoder, int(decode_filters/4), 'up2', concat_with='pool2_pool')
         decoder = upproject(decoder, int(decode_filters/8), 'up3', concat_with='pool1')
         decoder = upproject(decoder, int(decode_filters/16), 'up4', concat_with='conv1/relu')
-        if False: decoder = upproject(decoder, int(decode_filters/32), 'up5', concat_with='input_1')
+        if False:
+            decoder = upproject(decoder, int(decode_filters/32), 'up5', concat_with='input_1')
 
         # Extract depths (final layer)
         conv3 = Conv2D(filters=1, kernel_size=3, strides=1, padding='same', name='conv3')(decoder)
-
         # Create the model
         model = Model(inputs=base_model.input, outputs=conv3)
     else:

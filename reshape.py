@@ -11,10 +11,13 @@ if __name__ == '__main__':
 
     parser.add_argument("input_dir", type=str, help="input image dir")
     parser.add_argument("output_dir", type=str, help="output image dir")
+    parser.add_argument("--resolution", type=str, default="480,640")
 
     args = parser.parse_args()
 
     os.makedirs(args.output_dir, exist_ok=True)
+
+    height, width = map(int, args.resolution.split(','))
 
     filepath = os.path.join(args.input_dir, "**")
     files = glob.glob(filepath, recursive=True)
@@ -26,8 +29,7 @@ if __name__ == '__main__':
             if (".png" in file and "train" in file) or ("depth" in file and "test" in file):
                 # img = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
                 img = Image.open(file).convert('L')
-            height, width = img.size[:2]
-            size = (height // 2, width // 2)
+            size = (height, width)
 
             resized = img.resize(size)
             output_name = os.path.join(args.output_dir, os.path.relpath(file, start=args.input_dir))

@@ -103,7 +103,6 @@ if args.data == 'unreal':
 if args.data == 'own':
     callbacks = get_nyu_callbacks(model, basemodel, train_generator, test_generator, load_test_data() if args.full else None , runPath, save_checkpoint_period=args.save_period)
 
-import pdb; pdb.set_trace()
 # Start training
 model.fit_generator(train_generator, callbacks=callbacks, validation_data=test_generator, epochs=args.epochs, shuffle=True)
 
