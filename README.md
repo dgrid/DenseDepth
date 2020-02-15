@@ -1,4 +1,5 @@
 ## [High Quality Monocular Depth Estimation via Transfer Learning (arXiv 2018)](https://arxiv.org/abs/1812.11941)
+
 **[Ibraheem Alhashim](https://ialhashim.github.io/)** and **Peter Wonka**
 
 Offical Keras (TensorFlow) implementaiton. If you have any questions or need more help with the code, feel free to contact the first author.
@@ -8,6 +9,17 @@ Offical Keras (TensorFlow) implementaiton. If you have any questions or need mor
 **[Update]** Experimental TensorFlow 2.0 implementation added.
 
 **[Update]** Experimental PyTorch code added.
+
+## [Added by DataGrid]
+- Do not delete `nyu_data.zip`!
+
+```
+[local]
+$ ./build_and_run.sh Dockerfile dd
+
+[Docker]
+$ python3 train.py --data own --gpus 1 --bs 8 --data_dir data  --shape_rgb_2d '480 640'
+```
 
 ## Results
 
@@ -32,7 +44,7 @@ Offical Keras (TensorFlow) implementaiton. If you have any questions or need mor
 
 ## Demos
 * After downloading the pre-trained model (nyu.h5), run `python test.py`. You should see a montage of images with their estimated depth maps.
-* **[Update]** A Qt demo showing 3D point clouds from the webcam or an image. Simply run `python demo.py`. It requires the packages `PyGLM PySide2 pyopengl`. 
+* **[Update]** A Qt demo showing 3D point clouds from the webcam or an image. Simply run `python demo.py`. It requires the packages `PyGLM PySide2 pyopengl`.
 <p align="center">
   <img style="max-width:500px" src="https://s3-eu-west-1.amazonaws.com/densedepth/densedepth_results_04.jpg" alt="RGBD Demo">
 </p>
