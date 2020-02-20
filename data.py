@@ -8,6 +8,7 @@ from augment import BasicPolicy
 from pathlib import Path
 import csv
 import os
+import cv2
 
 def extract_zip(input_zip):
     input_zip=ZipFile(input_zip)
@@ -81,11 +82,13 @@ class own_BasicAugmentRGBSequence(Sequence):
 
             sample = self.dataset[index]
             x = np.clip(np.asarray(Image.open( BytesIO(self.data[sample[0]]) )).reshape(self.shape_rgb[1:])/255,0,1)
-            y = np.clip(np.asarray(Image.open( BytesIO(self.data[sample[1]]) )).reshape(self.orig_shape_depth[1:])/255*self.maxDepth,0,self.maxDepth)
+            #y = np.clip(np.asarray(Image.open( BytesIO(self.data[sample[1]]) )).reshape(self.orig_shape_depth[1:])/255*self.maxDepth,0,self.maxDepth)
+            y = np.clip(np.asarray(cv2.imdecode( np.fromstring( BytesIO(self.data[sample[1]]).read() , np.uint8), 1 )).reshape(self.orig_shape_depth[1:])/255*self.maxDepth,0,self.maxDepth)
+            y[y==0] = self.maxDepth
             y = DepthNorm(y, maxDepth=self.maxDepth)
 
-            batch_x[i] = own_resize(x, self.shape_rgb[1])
-            batch_y[i] = own_resize(y, self.shape_depth_reduced[1])
+            batch_x[i] = own_resize(x, self.shape_rgb[1], self.shape_rgb[2])
+            batch_y[i] = own_resize(y, self.shape_depth_reduced[1], self.shape_depth_reduced[2])
 
             if is_apply_policy: batch_x[i], batch_y[i] = self.policy(batch_x[i], batch_y[i])
 
@@ -117,11 +120,13 @@ class own_BasicRGBSequence(Sequence):
             sample = self.dataset[index]
 
             x = np.clip(np.asarray(Image.open( BytesIO(self.data[sample[0]]))).reshape(self.shape_rgb[1:])/255,0,1)
-            y = np.asarray(Image.open(BytesIO(self.data[sample[1]])), dtype=np.float32).reshape(self.orig_shape_depth[1:]).copy().astype(float) / 10.0
+            #y = np.asarray(Image.open(BytesIO(self.data[sample[1]])), dtype=np.float32).reshape(self.orig_shape_depth[1:]).copy().astype(float) / 10.0
+            y = np.asarray(cv2.imdecode( np.fromstring(BytesIO(self.data[sample[1]]).read(),np.uint8),1 ), dtype=np.float32).reshape(self.orig_shape_depth[1:]).copy().astype(float) / 10.0
+            y[y==0] = self.maxDepth
             y = DepthNorm(y, maxDepth=self.maxDepth)
 
-            batch_x[i] = own_resize(x, self.shape_rgb[1])
-            batch_y[i] = own_resize(y, self.shape_depth_reduced[1])
+            batch_x[i] = own_resize(x, self.shape_rgb[1], self.shape_rgb[2])
+            batch_y[i] = own_resize(y, self.shape_depth_reduced[1], self.shape_depth_reduced[2])
 
             # DEBUG:
             #self.policy.debug_img(batch_x[i], np.clip(DepthNorm(batch_y[i])/maxDepth,0,1), idx, i)
