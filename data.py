@@ -19,9 +19,9 @@ def extract_zip(input_zip):
 # own dataset
 ##########################
 
-def own_resize(img, resolution=480, padding=6):
+def own_resize(img, resolution_H=480, resolution_W=640, padding=6):
     from skimage.transform import resize
-    return resize(img, (resolution, int(resolution*4/3)), preserve_range=True, mode='reflect', anti_aliasing=True )
+    return resize(img, (resolution_H, resolution_W), preserve_range=True, mode='reflect', anti_aliasing=True )
 
 def get_own_data(batch_size, data_dir, shape_rgb_2d, shape_depth_2d, train_csv_path, test_csv_path, debug=False):
     data_dir = Path(data_dir)
