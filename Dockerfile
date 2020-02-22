@@ -1,4 +1,5 @@
-FROM nvidia/cuda:9.0-cudnn7-devel
+# FROM nvidia/cuda:9.0-cudnn7-devel
+FROM nvidia/cuda:10.0-cudnn7-devel
 
 # apt install python3.6
 RUN apt update
@@ -6,7 +7,7 @@ RUN apt install -y software-properties-common
 RUN add-apt-repository ppa:deadsnakes/ppa
 RUN add-apt-repository ppa:jonathonf/vim
 RUN apt update && apt install -y python3.6 python-dev python3.6-dev python3-pip
-RUN apt install -y vim libsm6 libxext6 libxrender-dev build-essential libssl-dev libffi-dev libxml2-dev libxslt1-dev zlib1g-dev graphviz
+RUN apt install -y vim libsm6 libxext6 libxrender-dev build-essential libssl-dev libffi-dev libxml2-dev libxslt1-dev zlib1g-dev graphviz curl
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 10
 RUN pip3 install --upgrade pip
 RUN apt install -y sudo
@@ -17,7 +18,8 @@ RUN update-locale LC_ALL="en_US.UTF-8"
 
 RUN pip3 install keras pillow matplotlib scikit-learn scikit-image opencv-python pydot GraphViz
 RUN pip3 install PyGLM PySide2 pyopengl
-RUN pip3 install tensorflow-gpu==1.15
+# RUN pip3 install tensorflow-gpu==1.15
+RUN pip3 install tensorflow-gpu==1.13.2
 
 #setting USER group number
 ENV USER docker

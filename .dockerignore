@@ -2,3 +2,5 @@ data/*
 data_backup/*
 data_resized/*
 nyu_data.zip
+mir_data/*
+models/*
