@@ -50,6 +50,8 @@ if args.shape_depth_2d is None:
 else:
     shape_depth_2d = tuple(map(int, args.shape_depth_2d.split(",")))
 
+print('Loading data')
+
 # Data loaders
 if args.data == 'nyu':
     train_generator, test_generator = get_nyu_train_test_data( args.bs, args.debug )
@@ -57,6 +59,8 @@ if args.data == 'unreal':
     train_generator, test_generator = get_unreal_train_test_data( args.bs )
 if args.data == 'own':
     train_generator, test_generator = get_own_train_test_data( args.bs, args.data_dir, shape_rgb_2d, shape_depth_2d, args.train_csv, args.test_csv, args.debug)
+
+print('Loading completed.')
 
 # Training session details
 runID = str(int(time.time())) + '-n' + str(len(train_generator)) + '-e' + str(args.epochs) + '-bs' + str(args.bs) + '-lr' + str(args.lr) + '-' + args.name
@@ -82,7 +86,8 @@ if True:
 
 # Multi-gpu setup:
 basemodel = model
-if args.gpus > 1: model = multi_gpu_model(model, gpus=args.gpus)
+if args.gpus > 1:
+    model = multi_gpu_model(model, gpus=args.gpus)
 
 # Optimizer
 optimizer = Adam(lr=args.lr, amsgrad=True)
@@ -129,7 +134,7 @@ def get_json_type(obj):
     if type(obj).__name__ == type.__name__:
         return obj.__name__
     raise TypeError('Not JSON Serializable: %s' % (obj,))
-print(json.dumps(basemodel.get_config(), indent=1, default=get_json_type))
+#print(json.dumps(basemodel.get_config(), indent=1, default=get_json_type))
 print("### for debug end ###")
 
 # Save the final trained model:

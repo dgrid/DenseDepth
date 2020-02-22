@@ -9,6 +9,7 @@ from pathlib import Path
 import csv
 import os
 import cv2
+import sys
 
 def extract_zip(input_zip):
     input_zip=ZipFile(input_zip)
@@ -32,8 +33,18 @@ def get_own_data(batch_size, data_dir, shape_rgb_2d, shape_depth_2d, train_csv_p
         reader = csv.reader(test_f, delimiter=',')
         own2_test = [row for row in reader]
 
-    data = list(map(str, data_dir.glob("**/*")))
-    data = {str(f): f.read_bytes() for f in data_dir.glob("**/*") if f.is_file()}
+    own2_train_list = []
+    for item in own2_train:
+        own2_train_list.extend(item)
+    own2_test_list = []
+    for item in own2_test:
+        own2_test_list.extend(item)
+    #data = list(map(str, data_dir.glob("**/*")))
+    #data = {str(f): f.read_bytes() for f in data_dir.glob("**/*") if f.is_file()}
+    data = {}
+    for f in data_dir.glob("**/*"):
+        if f.is_file() and (str(f) in own2_train_list or str(f) in own2_test_list):
+            data[str(f)] = f.read_bytes()
 
     shape_rgb = (batch_size, ) + shape_rgb_2d + (3, )
     shape_depth_reduced = (batch_size, ) + tuple([int(s / 2) for s in shape_depth_2d]) + (1, )
@@ -79,14 +90,20 @@ class own_BasicAugmentRGBSequence(Sequence):
         # Augmentation of RGB images
         for i in range(batch_x.shape[0]):
             index = min((idx * self.batch_size) + i, self.N-1)
-
+            
             sample = self.dataset[index]
-            x = np.clip(np.asarray(Image.open( BytesIO(self.data[sample[0]]) )).reshape(self.shape_rgb[1:])/255,0,1)
+            #x = np.clip(np.asarray(Image.open( BytesIO(self.data[sample[0]]) )).reshape(self.shape_rgb[1:])/255,0,1)
+            x = np.clip(cv2.resize(np.asarray(Image.open( BytesIO(self.data[sample[0]]) )), self.shape_rgb[1:3]).reshape(self.shape_rgb[1:])/255,0,1)
+            #x = np.clip(np.asarray(Image.open( BytesIO(self.data[sample[0]]) ))/255,0,1)
+            
             #y = np.clip(np.asarray(Image.open( BytesIO(self.data[sample[1]]) )).reshape(self.orig_shape_depth[1:])/255*self.maxDepth,0,self.maxDepth)
-            y = np.clip(np.asarray(cv2.imdecode( np.fromstring( BytesIO(self.data[sample[1]]).read() , np.uint8), 1 )).reshape(self.orig_shape_depth[1:])/255*self.maxDepth,0,self.maxDepth)
+            #y = np.clip(np.asarray(cv2.imdecode( np.fromstring( BytesIO(self.data[sample[1]]).read() , np.uint8), 1 )).reshape(self.orig_shape_depth[1:])/255*self.maxDepth,0,self.maxDepth)
+            y = np.clip(cv2.resize(np.asarray(cv2.imdecode( np.fromstring( BytesIO(self.data[sample[1]]).read() , np.uint8), 1 )), self.orig_shape_depth[1:3]).reshape(self.orig_shape_depth[1:])/255*self.maxDepth,0,self.maxDepth)
+            #y = np.clip(np.asarray(cv2.imdecode( np.fromstring( BytesIO(self.data[sample[1]]).read() , np.uint8), 1 ))/255*self.maxDepth,0,self.maxDepth)
+            
             y[y==0] = self.maxDepth
             y = DepthNorm(y, maxDepth=self.maxDepth)
-
+            
             batch_x[i] = own_resize(x, self.shape_rgb[1], self.shape_rgb[2])
             batch_y[i] = own_resize(y, self.shape_depth_reduced[1], self.shape_depth_reduced[2])
 
@@ -119,9 +136,11 @@ class own_BasicRGBSequence(Sequence):
 
             sample = self.dataset[index]
 
-            x = np.clip(np.asarray(Image.open( BytesIO(self.data[sample[0]]))).reshape(self.shape_rgb[1:])/255,0,1)
+            #x = np.clip(np.asarray(Image.open( BytesIO(self.data[sample[0]]))).reshape(self.shape_rgb[1:])/255,0,1)
+            x = np.clip(cv2.resize(np.asarray(Image.open( BytesIO(self.data[sample[0]]))), self.shape_rgb[1:3]).reshape(self.shape_rgb[1:])/255,0,1)
             #y = np.asarray(Image.open(BytesIO(self.data[sample[1]])), dtype=np.float32).reshape(self.orig_shape_depth[1:]).copy().astype(float) / 10.0
-            y = np.asarray(cv2.imdecode( np.fromstring(BytesIO(self.data[sample[1]]).read(),np.uint8),1 ), dtype=np.float32).reshape(self.orig_shape_depth[1:]).copy().astype(float) / 10.0
+            #y = np.asarray(cv2.imdecode( np.fromstring(BytesIO(self.data[sample[1]]).read(),np.uint8),1 ), dtype=np.float32).reshape(self.orig_shape_depth[1:]).copy().astype(float) / 10.0
+            y = cv2.resize(np.asarray(cv2.imdecode( np.fromstring(BytesIO(self.data[sample[1]]).read(),np.uint8),1 ), dtype=np.float32), self.orig_shape_depth[1:3]).reshape(self.orig_shape_depth[1:]).copy().astype(float) / 10.0
             y[y==0] = self.maxDepth
             y = DepthNorm(y, maxDepth=self.maxDepth)
 
