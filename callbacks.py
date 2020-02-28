@@ -37,7 +37,7 @@ def get_nyu_callbacks(model, basemodel, train_generator, test_generator, test_se
                 from skimage.transform import resize
                 plasma = plt.get_cmap('plasma')
 
-                minDepth, maxDepth = 10, 1000
+                minDepth, maxDepth = 1e-3, 1000
 
                 train_samples = []
                 test_samples = []

@@ -2,13 +2,14 @@ import os
 import glob
 import argparse
 import matplotlib
+import cv2
 from matplotlib import pyplot as plt
 
 # Keras / TensorFlow
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '5'
 from keras.models import load_model
 from layers import BilinearUpSampling2D
-from utils import predict, load_images, display_images
+from utils import predict, load_images, display_images, predict_test
 from loss import depth_loss_function
 
 # Argument Parser
@@ -34,11 +35,15 @@ if args.weight != None:
     model.load_weights(args.weight, by_name=False)
 
 # Input images
-inputs = load_images( glob.glob(args.input) )
+names = glob.glob(args.input)
+inputs = load_images( names )
 print('\nLoaded ({0}) images of size {1}.'.format(inputs.shape[0], inputs.shape[1:]))
 
 # Compute results
 outputs = predict(model, inputs)
+print(outputs.shape)
+for i in range(len(outputs)):
+    cv2.imwrite(os.path.basename(names[i]).split(".")[0] + ".pfm", outputs[i])
 
 #matplotlib problem on ubuntu terminal fix
 #matplotlib.use('TkAgg')

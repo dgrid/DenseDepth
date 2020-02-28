@@ -1,4 +1,5 @@
 import os, sys, glob, time, pathlib, argparse
+from functools import partial
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '5'
 
 # Kerasa / TensorFlow
@@ -11,6 +12,7 @@ from callbacks import get_nyu_callbacks
 from keras.optimizers import Adam
 from keras.utils import multi_gpu_model
 from keras.utils.vis_utils import plot_model
+from keras.backend import print_tensor
 
 # Argument Parser
 parser = argparse.ArgumentParser(description='High Quality Monocular Depth Estimation via Transfer Learning')
@@ -25,7 +27,7 @@ parser.add_argument('--bs', type=int, default=4, help='Batch size')
 parser.add_argument('--epochs', type=int, default=20, help='Number of epochs')
 parser.add_argument('--gpus', type=int, default=1, help='The number of GPUs to use')
 parser.add_argument('--gpuids', type=str, default='0', help='IDs of GPUs to use')
-parser.add_argument('--mindepth', type=float, default=10.0, help='Minimum of input depths')
+parser.add_argument('--mindepth', type=float, default=1e-3, help='Minimum of input depths')
 parser.add_argument('--maxdepth', type=float, default=1000.0, help='Maximum of input depths')
 parser.add_argument('--name', type=str, default='densedepth_nyu', help='A name to attach to the training session')
 parser.add_argument('--checkpoint', type=str, default='', help='Start training from an existing model.')
@@ -110,32 +112,6 @@ if args.data == 'own':
 
 # Start training
 model.fit_generator(train_generator, callbacks=callbacks, validation_data=test_generator, epochs=args.epochs, shuffle=True)
-
-### for debug ###
-import json, pprint
-pprint.pprint(basemodel.get_config(), depth=7)
-
-import numpy as np
-def get_json_type(obj):
-    print(obj)
-    if hasattr(obj, 'get_config'):
-        return {'class_name': obj.__class__.__name__,
-                'config': obj.get_config()}
-    # if obj is any numpy type
-    if type(obj).__module__ == np.__name__:
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        else:
-            return obj.item()
-    # misc functions (e.g. loss function)
-    if callable(obj):
-        return obj.__name__
-    # if obj is a python 'type'
-    if type(obj).__name__ == type.__name__:
-        return obj.__name__
-    raise TypeError('Not JSON Serializable: %s' % (obj,))
-#print(json.dumps(basemodel.get_config(), indent=1, default=get_json_type))
-print("### for debug end ###")
 
 # Save the final trained model:
 basemodel.save(runPath + '/model.h5')
