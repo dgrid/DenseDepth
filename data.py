@@ -36,16 +36,17 @@ def get_own_data(batch_size, data_dir, shape_rgb_2d, shape_depth_2d, train_csv_p
 
     own2_train_list = []
     for item in own2_train:
-        own2_train_list.extend(item)
+        own2_train_list.extend([os.path.abspath(i) for i in item])
     own2_test_list = []
     for item in own2_test:
-        own2_test_list.extend(item)
+        own2_test_list.extend([os.path.abspath(i) for i in item])
     #data = list(map(str, data_dir.glob("**/*")))
     #data = {str(f): f.read_bytes() for f in data_dir.glob("**/*") if f.is_file()}
     data = {}
     for f in data_dir.glob("**/*"):
-        if f.is_file() and (str(f) in own2_train_list or str(f) in own2_test_list):
-            data[str(f)] = f.read_bytes()
+        f_abs = os.path.abspath(str(f))
+        if f.is_file() and (f_abs in own2_train_list or f_abs in own2_test_list):
+            data[f_abs] = f.read_bytes()
 
     shape_rgb = (batch_size, ) + shape_rgb_2d + (3, )
     shape_depth_reduced = (batch_size, ) + tuple([int(s / 2) for s in shape_depth_2d]) + (1, )
